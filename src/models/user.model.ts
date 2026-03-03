@@ -19,7 +19,8 @@ export enum UserStatus {
 /* ================= INTERFACES ================= */
 
 export interface IUser {
-  name: string;
+  full_name: string;
+  academic_name: string;
   email: string;
   roles: Role[];
   memberId?: string | null;
@@ -36,7 +37,8 @@ export interface IUserDocument extends IUser, Document {
 
 const userSchema = new Schema<IUserDocument>(
     {
-      name: { type: String, required: true, trim: true },
+      full_name: { type: String, required: true, trim: true },
+      academic_name: { type: String, required: true, trim: true },
 
       email: {
         type: String,
@@ -86,7 +88,6 @@ const userSchema = new Schema<IUserDocument>(
 
 userSchema.pre("save", async function () {
   if (!this.isModified("password")) return;
-
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
 });

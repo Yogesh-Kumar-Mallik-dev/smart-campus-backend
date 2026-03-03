@@ -18,17 +18,18 @@ const seedRegistrar = async () => {
       process.exit(0);
     }
 
-    const roles = [Role.REGISTRAR];
+    const roles: Role[] = [Role.REGISTRAR];
 
     const tempId = await generateTempId(roles);
 
     await User.create({
-      name: "Temporary Registrar",
+      full_name: "Temporary Registrar",
+      academic_name: "Temporary Registrar",
       email: "registrar@smartcampus.local",
       roles,
       tempId,
       password: tempId,
-      // memberId intentionally NOT set
+      memberId: null,
     });
 
     console.log("Registrar created successfully.");

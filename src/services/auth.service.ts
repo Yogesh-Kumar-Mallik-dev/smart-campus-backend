@@ -7,10 +7,7 @@ export const loginService = async (
     password: string
 ) => {
   const user = await User.findOne({
-    $or: [
-      { tempId: identifier },
-      { memberId: identifier },
-    ],
+    $or: [{ tempId: identifier }, { memberId: identifier }],
   }).select("+password");
 
   if (!user) throw new Error("Invalid credentials");

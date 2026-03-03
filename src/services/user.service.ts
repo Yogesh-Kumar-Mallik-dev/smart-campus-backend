@@ -10,10 +10,11 @@ const rolePrefixMap: Record<Role, string> = {
 
 export const generateTempId = async (roles: Role[]): Promise<string> => {
   const prefix = rolePrefixMap[roles[0]];
+  const year = new Date().getFullYear();
 
   while (true) {
     const random = Math.floor(1000 + Math.random() * 9000);
-    const tempId = `${prefix}-${random}`;
+    const tempId = `${prefix}-${year}-${random}`;
 
     const exists = await User.findOne({ tempId });
     if (!exists) return tempId;

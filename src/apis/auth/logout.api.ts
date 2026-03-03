@@ -9,7 +9,7 @@ export const logoutAPI = async (
     const header = req.headers.authorization;
 
     if (!header || !header.startsWith("Bearer ")) {
-      return res.status(400).json({
+      return res.status(401).json({
         message: "Valid authorization token required",
       });
     }
