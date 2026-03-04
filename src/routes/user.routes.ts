@@ -1,31 +1,20 @@
 import { Router } from "express";
-
-import { loginAPI } from "@/apis/auth/login.api";
-import { logoutAPI } from "@/apis/auth/logout.api";
-import { createUserAPI } from "@/apis/auth/createUser.api";
+import { getUsersAPI } from "@/apis/user/getUsers.api";
 import { updateUserAPI } from "@/apis/user/updateUser.api";
+import { deactivateUserAPI } from "@/apis/user/deactivateUser.api";
 
 import { authenticate } from "@/middlewares/auth.middleware";
 import { authorize } from "@/middlewares/rbac.middleware";
-
 import { Role } from "@/models/user.model";
 
 const router = Router();
 
-/* LOGIN */
-
-router.post("/login", loginAPI);
-
-/* CREATE USER (REGISTRAR ONLY) */
-
-router.post(
-    "/create",
+router.get(
+    "/users",
     authenticate,
     authorize([Role.REGISTRAR]),
-    createUserAPI
+    getUsersAPI
 );
-
-/* UPDATE USER (REGISTRAR ONLY) */
 
 router.put(
     "/users/:id",
@@ -34,12 +23,11 @@ router.put(
     updateUserAPI
 );
 
-/* LOGOUT */
-
-router.post(
-    "/logout",
+router.patch(
+    "/users/:id/deactivate",
     authenticate,
-    logoutAPI
+    authorize([Role.REGISTRAR]),
+    deactivateUserAPI
 );
 
 export default router;

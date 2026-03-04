@@ -1,7 +1,9 @@
 import { User, Role } from "@/models/user.model";
 import { generateTempId } from "@/services/user.service";
 
-/* ================= CREATE USER ================= */
+/* =========================================================
+   CREATE USER
+========================================================= */
 
 interface CreateUserInput {
   full_name: string;
@@ -35,12 +37,25 @@ export const createUserController = async ({
     throw new Error("At least one role is required");
   }
 
+  const normalizedEmail = email.toLowerCase().trim();
+
+  const existing = await User.findOne({ email: normalizedEmail });
+
+  if (existing) {
+    throw new Error("Email already exists");
+  }
+
   const tempId = await generateTempId(roles);
+
+  /*
+  ARCHITECTURE RULE
+  tempId === initial password
+  */
 
   await User.create({
     full_name: full_name.trim(),
     academic_name: academic_name.trim(),
-    email: email.toLowerCase().trim(),
+    email: normalizedEmail,
     roles,
     memberId: memberId || null,
     tempId,
@@ -53,19 +68,30 @@ export const createUserController = async ({
   };
 };
 
-/* ================= UPDATE USER (REGISTRAR ONLY) ================= */
+/* =========================================================
+   UPDATE USER
+========================================================= */
 
 interface UpdateUserInput {
+  requesterId: string;
+  requesterRoles: Role[];
   targetUserId: string;
+
   full_name?: string;
   academic_name?: string;
+  email?: string;
+  roles?: Role[];
   memberId?: string | null;
 }
 
 export const updateUserController = async ({
+                                             requesterId,
+                                             requesterRoles,
                                              targetUserId,
                                              full_name,
                                              academic_name,
+                                             email,
+                                             roles,
                                              memberId,
                                            }: UpdateUserInput) => {
 
@@ -75,34 +101,73 @@ export const updateUserController = async ({
     throw new Error("User not found");
   }
 
+  const isRegistrar = requesterRoles.includes(Role.REGISTRAR);
+  const isSelf = requesterId === user._id.toString();
+
   if (full_name !== undefined) {
-    if (full_name.trim().length < 2) {
-      throw new Error("Full name must be at least 2 characters");
+    if (!isRegistrar) {
+      throw new Error("Only registrar can update full name");
     }
     user.full_name = full_name.trim();
   }
 
   if (academic_name !== undefined) {
-    if (academic_name.trim().length < 2) {
-      throw new Error("Academic name must be at least 2 characters");
+    if (!isRegistrar) {
+      throw new Error("Only registrar can update academic name");
     }
     user.academic_name = academic_name.trim();
   }
 
+  if (roles !== undefined) {
+    if (!isRegistrar) {
+      throw new Error("Only registrar can update roles");
+    }
+
+    if (roles.length === 0) {
+      throw new Error("User must have at least one role");
+    }
+
+    if (
+        user.roles.includes(Role.REGISTRAR) &&
+        !roles.includes(Role.REGISTRAR)
+    ) {
+      throw new Error("Registrar role cannot be removed");
+    }
+
+    user.roles = roles;
+  }
+
   if (memberId !== undefined) {
+    if (!isRegistrar) {
+      throw new Error("Only registrar can update member ID");
+    }
+
     user.memberId = memberId;
+  }
+
+  if (email !== undefined) {
+
+    if (!isSelf && !isRegistrar) {
+      throw new Error("You cannot update another user's email");
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+
+    const existing = await User.findOne({
+      email: normalizedEmail,
+      _id: { $ne: user._id },
+    });
+
+    if (existing) {
+      throw new Error("Email already exists");
+    }
+
+    user.email = normalizedEmail;
   }
 
   await user.save();
 
   return {
     message: "User updated successfully",
-    user: {
-      id: user.id,
-      full_name: user.full_name,
-      academic_name: user.academic_name,
-      memberId: user.memberId,
-      roles: user.roles,
-    },
   };
 };

@@ -6,7 +6,14 @@ import morgan from "morgan";
 
 dotenv.config();
 
+/* ================= ROUTE IMPORTS ================= */
+
 import authRoutes from "@/routes/auth.routes";
+import userRoutes from "@/routes/user.routes";
+import announcementRoutes from "@/routes/announcement.routes";
+import notificationRoutes from "@/routes/notification.routes";
+
+/* ================= APP INIT ================= */
 
 const app: Application = express();
 
@@ -35,7 +42,7 @@ app.use(
     })
 );
 
-/* ================= MIDDLEWARE ================= */
+/* ================= BODY PARSER ================= */
 
 app.use(express.json());
 
@@ -47,7 +54,17 @@ app.get("/", (_req: Request, res: Response) => {
 
 /* ================= ROUTES ================= */
 
+/* Authentication */
 app.use("/api/auth", authRoutes);
+
+/* Users */
+app.use("/api", userRoutes);
+
+/* Announcements */
+app.use("/api/announcements", announcementRoutes);
+
+/* Notifications */
+app.use("/api/notifications", notificationRoutes);
 
 /* ================= GLOBAL ERROR HANDLER ================= */
 
@@ -61,7 +78,9 @@ app.use(
       console.error(err);
 
       if (err.message === "Not allowed by CORS") {
-        return res.status(403).json({ message: "CORS error" });
+        return res.status(403).json({
+          message: "CORS error",
+        });
       }
 
       return res.status(500).json({
