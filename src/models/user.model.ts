@@ -1,4 +1,4 @@
-import { Schema, model, Document } from "mongoose";
+import { Schema, model, HydratedDocument } from "mongoose";
 import bcrypt from "bcrypt";
 
 /* ================= ENUMS ================= */
@@ -16,28 +16,42 @@ export enum UserStatus {
   OFFLINE = "OFFLINE",
 }
 
-/* ================= INTERFACES ================= */
+/* ================= INTERFACE ================= */
 
 export interface IUser {
   full_name: string;
   academic_name: string;
   email: string;
+
   roles: Role[];
+
   memberId?: string | null;
   tempId: string;
+
   password: string;
+
   status: UserStatus;
+
+  /* optional academic data for notifications */
+  batch?: string;
+  class?: string;
+
+  /* dynamic attributes */
+  attributes?: Record<string, any>;
 }
 
-export interface IUserDocument extends IUser, Document {
+/* ================= DOCUMENT TYPE ================= */
+
+export type IUserDocument = HydratedDocument<IUser> & {
   comparePassword(password: string): Promise<boolean>;
-}
+};
 
 /* ================= SCHEMA ================= */
 
 const userSchema = new Schema<IUserDocument>(
     {
       full_name: { type: String, required: true, trim: true },
+
       academic_name: { type: String, required: true, trim: true },
 
       email: {
@@ -80,6 +94,27 @@ const userSchema = new Schema<IUserDocument>(
         enum: Object.values(UserStatus),
         default: UserStatus.ACTIVE,
       },
+
+      /* academic targeting */
+
+      batch: {
+        type: String,
+        default: null,
+        index: true,
+      },
+
+      class: {
+        type: String,
+        default: null,
+        index: true,
+      },
+
+      /* attribute based targeting */
+
+      attributes: {
+        type: Schema.Types.Mixed,
+        default: {},
+      },
     },
     { timestamps: true }
 );
@@ -88,6 +123,7 @@ const userSchema = new Schema<IUserDocument>(
 
 userSchema.pre("save", async function () {
   if (!this.isModified("password")) return;
+
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
 });
@@ -99,5 +135,7 @@ userSchema.methods.comparePassword = async function (
 ): Promise<boolean> {
   return bcrypt.compare(candidate, this.password);
 };
+
+/* ================= MODEL ================= */
 
 export const User = model<IUserDocument>("User", userSchema);
