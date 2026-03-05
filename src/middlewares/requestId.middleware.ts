@@ -14,6 +14,7 @@ export const requestIdMiddleware = (
     _res: Response,
     next: NextFunction
 ): void => {
+
   // noinspection UnnecessaryLocalVariableJS
   const id = `REQ-${uuidv4().slice(0, 8)}`;
 

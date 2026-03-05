@@ -10,6 +10,23 @@ const statusColor = (status: number): string => {
   return status.toString();
 };
 
+const methodColor = (method: string): string => {
+  switch (method) {
+    case "GET":
+      return chalk.green(method);
+    case "POST":
+      return chalk.blue(method);
+    case "PUT":
+      return chalk.yellow(method);
+    case "PATCH":
+      return chalk.magenta(method);
+    case "DELETE":
+      return chalk.red(method);
+    default:
+      return chalk.white(method);
+  }
+};
+
 morgan.token("request-id", (req: Request) => req.requestId || "REQ-UNKNOWN");
 
 morgan.token("user-temp", (req: any) => {
@@ -21,12 +38,20 @@ morgan.token("colored-status", (_req, res) => {
 });
 
 export const logger = morgan((tokens, req, res) => {
+
+  const env = chalk.gray(`[${process.env.NODE_ENV || "development"}]`);
+
   const requestId = chalk.gray(tokens["request-id"](req, res));
+
   const user = chalk.cyan(tokens["user-temp"](req, res));
-  const method = chalk.blue(tokens.method(req, res));
+
+  const method = methodColor(tokens.method(req, res) || "");
+
   const url = chalk.white(tokens.url(req, res));
+
   const status = tokens["colored-status"](req, res);
+
   const time = chalk.magenta(tokens["response-time"](req, res) + " ms");
 
-  return `${requestId} ${user} ${method} ${url} ${status} ${time}`;
+  return `${env} ${requestId} ${user} ${method} ${url} ${status} ${time}`;
 });
